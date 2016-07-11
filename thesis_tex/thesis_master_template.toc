@@ -1,0 +1,7 @@
+\contentsline {chapter}{\numberline {1}Introduction}{1}
+\contentsline {section}{\numberline {1.1}Figure+Citation}{1}
+\contentsline {section}{\numberline {1.2}Here is a Section}{1}
+\contentsline {chapter}{\numberline {2}New Chapter is Easy}{2}
+\contentsline {section}{\numberline {2.1}Sections are the Same}{2}
+\contentsline {chapter}{\numberline {A}Nonsense}{3}
+\contentsline {chapter}{\textbf {Bibliography}}{4}

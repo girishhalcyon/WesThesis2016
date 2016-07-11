@@ -1,0 +1,224 @@
+%-----------------------------------------------------------------------------------------------------------------------------------------
+% PACKAGES
+%Document Class starts every LaTeX document.  In this case, we're declaring the document class to be a book.  Changing "oneside" to "twoside" changes where the page numbers and headers and such get placed.
+\documentclass[12pt,oneside]{book}
+
+%These are the packages I used.  There's a description of (most of) them below (that Arthur wrote):
+\usepackage{fancyhdr, geometry, graphicx, epstopdf, lscape, setspace, amssymb, amsmath, wasysym,moreverb, natbib, titlesec, longtable, multirow, alltt,here, indentfirst,ifthen}
+
+\usepackage[small,bf]{caption}
+\geometry{letterpaper}
+
+
+%The "raggedbottom" command allows LaTeX to take some liberty with where the text on a page ends. This saved me some weird formatting problems I was having.
+ \raggedbottom
+ 
+%set the pagestyle:
+\fancypagestyle{plain}{
+\fancyhf{} % clear all header and footer fields, we will re-format them later
+
+%Some formatting stuff:
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}}
+
+
+%	NECESSARY PACKAGES
+%	fancyhdr enables use of fancy pagestyle
+%	geometry defines page layout
+%	graphicX allows for inclusion of graphics and page scaling and rotation
+%	epstopdf allows the conversion of eps files to pdf and is required for figures
+%	caption allows the captioning of figures
+%	lscape allows for the creation of landscape pages-- important for large tables
+%	setspace allows for doublespacing
+%	natbib allows for the citations and Bibtex
+%	titlesec allows for the definition of title layouts
+
+%	OPTIONAL PACKAGES
+%	aastex is only useful for article submission
+%	revsymb is for physics symbols
+%	amssymb is for math symbols
+%	amsmath is for math formatting for things like matrices
+%	parskip (\usepackage[parfill]{parskip})  allows paragraphs to begin with empty line
+%	mathrsfs is required for \mathscr, the best Lagrangian and FT font
+%	here makes !h force graph here and !t force the graph at the top of the page
+%	wrapfig allows the wrapping of figures
+%	fontspec allows the specification of fonts
+%	color allows for the specification of the color of fonts
+%	eso-pic allows the addition of watermarks such as a draft date
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------
+% RULES
+
+%This has something to do with headers and margins and stuff:
+\DeclareGraphicsRule{.tif}{png}{.png}{`convert #1 `dirname #1`/`basename #1 .tif`.png}
+\textwidth 5.750in \textheight=8.50in \headheight 0.0625in \topmargin 0.0in % book strict
+
+%==============================================================================
+% Uncomment below for one sided printing (margins the same on even and odd pages)
+\oddsidemargin 0.500in \evensidemargin 0.500in
+
+% Uncomment below for two sided printing (margins different on even and odd pages)
+%\oddsidemargin 0.563in \evensidemargin 0.2500in
+
+%This sets how we want the formatting of chapter titles to look (bold face and Huge):
+\titleformat{\chapter}{\bf\Huge}
+{Chapter \thechapter}{-4.4em}{\\}
+\titlespacing*{\chapter}{0pt}{-.57in}{*3}
+
+%This formats the section headings:
+\titleformat{\section}{\bf\Large}
+{\thesection}{1em}{}
+\titlespacing*{\section}{0pt}{*2}{*2}
+
+%Let's double-space the document:
+\doublespacing
+
+%And our citation style will be aa (astronomy style):
+\citestyle{aa}
+
+%-----------------------------------------------------------------------------------------------------------------------------------------
+% DOCUMENT/ TITLE PAGE
+%Now the document actually begins:
+\begin{document}
+
+%This states that this is the stuff that comes before the real text:
+\frontmatter
+
+%Here goes the title page:
+\pagestyle{empty}
+\begin{titlepage}
+\begin{center}
+\rule{5.75in}{1pt} \\
+\vspace*{-0.125in}
+{\large \doublespacing Wesleyan University} \hfill {\large \doublespacing The Honors College}
+\rule[0.2in]{5.75in}{1pt} \\
+\vspace*{0.8in}
+{\LARGE \singlespacing \bf Necroplanetology: \\ Dead Planets \\Are Fun} \\
+\vspace*{0.05in}
+\vspace*{0.10in}
+{\large \vspace*{0.20in}  \singlespacing by \vspace*{.2in}
+\\Girish Duvvuri \\ Class of 2017\\}
+\vspace*{0.25in}
+\vspace*{0.8in}
+{\large \singlespacing A thesis submitted to the\\ faculty of Wesleyan University\\ in partial fulfillment of the requirements for the \\ Degree of Bachelor of Arts\\ with Departmental Honors in Astronomy\\ \vspace*{-0.15in} }
+\vspace*{.25in}
+\rule{5.75in}{1pt} \\
+\vspace*{-0.125in}
+{\large \doublespacing Middletown, Connecticut \hfill Eventually, 2048}
+\rule[0.2in]{5.75in}{1pt} \\
+\end{center}
+\end{titlepage}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------
+% ABSTRACT/ ACKNOWLEDGEMENTS
+%After the title page, comes anything else you want before the Table of Contents.  Note that the Epigraph and acknowledgements are in their own files.  The \include command inserts the external files into the final document.
+
+\pagestyle{empty}
+\include{0_Epigraph}
+\include{0_Thanks}
+
+%My title formatting changes after the frontmatter, because of how i formatted my acknowledgements:
+
+\titleformat{\chapter}{\bf\Huge}
+{Chapter \thechapter}{-4.4em}{\\}
+\titlespacing*{\chapter}{0pt}{*2}{*3}
+
+\titleformat{\section}{\bf\Large}
+{\thesection}{1em}{}
+\titlespacing*{\section}{0pt}{*2}{*2}
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------
+% CONTENTS/ RULES OF HEADERS
+%LaTeX creates a table of contents for you automatically, but you may have to compile the document twice before it shows up properly:
+
+\tableofcontents  \pagestyle{empty}
+
+%You can also put in the following, if you wish:
+
+%\listoffigures
+%\listoftables \pagestyle{empty}
+
+
+%Now we start the real part of the document:
+\mainmatter
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------
+% HEADERS
+%This took me forever to figure out properly, and you may want to change it.  There's also different thing you can do if you want doublesided printing.  Your final thesis, as published by the University, is one-sided.
+
+
+\renewcommand{\chaptermark}[1]{ \markboth{\sc\thechapter.\ #1}{}}
+
+\pagestyle{fancy}
+\fancyhead{}
+\fancyfoot{}
+
+\fancyhead[L]{\leftmark}
+\fancyhead[R]{\thepage}
+
+%==============================================================================
+%Number your pages!  
+\pagenumbering{arabic}
+
+%-----------------------------------------------------------------------------------------------------------------------------------------
+% CHAPTERS
+%Here's the actual thesis:  (note that file names CAN'T have spaces in them!)
+
+\include{1_Introduction}
+\include{2_Chap2}
+
+
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------
+%% APPENDIX
+
+%tell LaTeX that you're now in the appendix section:
+
+\appendix
+
+%I wanted my title formatting to be slightly different here, so that things are numbered "Appendix A" instead of "Chapter A" or "Chapter 6"
+
+\titleformat{\chapter}{\bf\huge}
+{Appendix \thechapter}{-5.35em}{\\}
+\titlespacing*{\chapter}{0pt}{-.5in}{*3}
+
+%These are the file names of my appendices:
+
+\include{Appx}
+
+\doublespacing
+
+
+%-----------------------------------------------------------------------------------------------------------------------------------------
+%%BIBLIOGRAPHY:
+
+\fancypagestyle{plain}{%
+% clear all header and footer fields, we don't want these for the bibliography
+\fancyhf{} 
+% except we want the page number to show up in the center of the footer:
+\fancyfoot[C]{\thepage} 
+
+\renewcommand{\headrulewidth}{0pt}
+\renewcommand{\footrulewidth}{0pt}}
+\pagestyle{plain}
+
+%change title spacing once again, for the bibliography:
+\titlespacing*{\chapter}{0pt}{-.75in}{*3}
+
+%Add the bibliography to the table of contents, it doesn't show up by default, you have to specify it:
+\addcontentsline{toc}{chapter}{\textbf {Bibliography}}
+
+%The default for BibTex (the bibliography builder in LaTeX) is to not include citations that are in your bibliography file, but that you don't cite anywhere in the paper.  This changes that setting, so that all papers show up in the bibliography, whether or not you referenced them:
+\nocite{*}
+
+%Insert the bibliography (in this case, my file name was also "bibliography" if not, your line would read: \bibliography{my_workscited_filename} or whatever:
+\bibliographystyle{apj}
+\bibliography{bibliography}
+
+%the end!
+\end{document} 

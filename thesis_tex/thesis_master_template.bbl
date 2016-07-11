@@ -1,0 +1,10 @@
+\begin{thebibliography}{1}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+
+\bibitem[{{Vanderburg} {et~al.}(2015){Vanderburg}, {Johnson}, {Rappaport},
+  {Bieryla}, {Irwin}, {Lewis}, {Kipping}, {Brown}, {Dufour}, {Ciardi}, {Angus},
+  {Schaefer}, {Latham}, {Charbonneau}, {Beichman}, {Eastman}, {McCrady},
+  {Wittenmyer}, \& {Wright}}]{Vanderburg2015}
+{Vanderburg}, A., {et~al.} 2015, \nat, 526, 546
+
+\end{thebibliography}

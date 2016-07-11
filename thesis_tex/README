@@ -1,0 +1,25 @@
+Ok, so here's how this works:
+As you can see, there's a ton of files attached to this email.  The way LaTeX works is that I have a master document (thesis_master_template.tex) that contains the overall instructions for LaTeX on how to make a PDF of my document.  I tried to comment it really well, so that should all be in order.  In that document, I "import" the text of my actual thesis, by using an \include command to reference each chapter, which is its own file.  Those are the other files with the .tex extension that I included.  Those should be all you need to see how my thesis was LaTeX -ed, but it won't actually compile and produce a nice PDF for you unless you do the following:
+
+First of all, you will need to download all these attachments into one folder.  Then you use LaTeX to compile the master template, which creates the PDF.  (I actually don't remember the program on the astro computers for using LaTeX, ask Roy).   However, I haven't attached the folder will all my images in it, because it's too big.  Without that file, you won't be able to compile it properly.  I think the best way for you to get those is to get them from my section of the astronomy servers: 
+/Volumes/e/Home/hsugarman/Documents/thesis_work/Thesis/Tex/Figures
+
+Copy that whole "figures" file to wherever you're keeping the rest of these LaTeX files I'm giving you.  
+
+But there's more.....
+
+You also should be able to get my bibliography to compile, so you can see how that's done.  I HIGHLY recommend using the built-in bibliography tools (it's actually called BibTeX) for your thesis.  It will save you time and be easier.  I've attached an overview of how to do this (bibliography guide.txt), it's really quite simple in the end.   For now, once you have all my files (from this e-mail and the "Figures" folder), you need to do the following sequence:
+
+Compile the thesis_master_template document in LaTeX.
+Compile it again with with BibTeX
+Compile it twice more with LaTeX.
+
+This should produce the final PDF.  The reason you need to do this is that when you compile a document, Latex records a log of internal citations. It needs to be able to reference this log in order to format everything right, and it takes a couple of run-throughs to get it all in order.  Luckily the compiling is fast.  
+
+To see how to format charts and figures, look at the text of the chapters themselves.
+
+Whew!  Sorry for being so long winded, I promise LaTeX really isn't scary at all, it's quite fun to use in the end.  You have a big advantage because you're getting started so early.  PLEASE let me know if you have any questions, or if the document doesn't compile.  (I think there may be one compiliation error, don't worry about it, just hit "enter" and move on).  The PDF that I attached is what the final result should look like, if that's all you want to see.  
+
+Good luck!
+
+-- H.R.S.

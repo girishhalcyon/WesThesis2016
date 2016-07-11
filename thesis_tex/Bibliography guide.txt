@@ -1,0 +1,36 @@
+
+I've included the apj.bst file.  This is a file that is also publicly avialiable online (search apj.bst), that tells LaTeX how to format your citations and bibliography.  You'll need to have a copy of this file in the same directory as your thesis.
+ 
+
+To do this, go to the ADS page for the article you are citing.  It will look like this: http://adsabs.harvard.edu/abs/2009ApJ...692..556R
+
+At the bottom of the page, there's a link to "Bibtex entry for this abstract".  Go to the link, and copy the text into your bibliography file.  The first line of the text is something like:
+
+@Article{2009Apj...692...556R,
+
+Change everything between the curly bracket and the comma to a name that you will use to reference the article.  In this case, I'd use Rieke2009 (spaces are not allowed).  I think you also need to change the line that says
+journal = {\apj}
+to
+journal = {ApJ}
+
+Basically, \apj is supposed to be a command indicating to BibTex that the journal the paper came from is the Astrophysical Journal, and to format it as such, but the command doesn't work, and I don't know why.
+
+Now, if i wanted to cite this document parenthetically in the text of my thesis, I'd put:
+"This is an interesting fact about black holes \citep{Rieke2009}."
+for the result:
+"This is an interesting fact about black holes (Rieke et al, 2009)."
+
+If i wanted to cite it in the text:
+"\cite{Rieke2009} showed this interesting fact."
+for the result:
+"Rieke, et al (2009) showed this interesting fact."
+
+Another thing you can do:
+"This is an interesting fact about black holes \citep[see][for a more detailed explanation]{Rieke2009} "
+which produces:
+"This is an interesting fact about black holes (see Rieke et al, 2009 for a more detailed explanation)."
+
+
+Sorry for being long winded, I think that just about covers it.  
+
+-- H.R.S. 
