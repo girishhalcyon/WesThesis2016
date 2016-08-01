@@ -1,7 +1,27 @@
 \contentsline {chapter}{\numberline {1}Introduction}{1}
-\contentsline {section}{\numberline {1.1}Figure+Citation}{1}
-\contentsline {section}{\numberline {1.2}Here is a Section}{1}
-\contentsline {chapter}{\numberline {2}New Chapter is Easy}{2}
-\contentsline {section}{\numberline {2.1}Sections are the Same}{2}
-\contentsline {chapter}{\numberline {A}Nonsense}{3}
-\contentsline {chapter}{\textbf {Bibliography}}{4}
+\contentsline {section}{\numberline {1.1}Exoplanets}{1}
+\contentsline {section}{\numberline {1.2}Transits}{1}
+\contentsline {section}{\numberline {1.3}WD Transit Motivation}{1}
+\contentsline {section}{\numberline {1.4}WD1145 Detection}{2}
+\contentsline {section}{\numberline {1.5}Significance of WD1145}{2}
+\contentsline {section}{\numberline {1.6}Figure+Citation}{2}
+\contentsline {chapter}{\numberline {2}Spectroscopy}{4}
+\contentsline {section}{\numberline {2.1}Datasets}{4}
+\contentsline {section}{\numberline {2.2}Fitting WD+CS}{5}
+\contentsline {subsection}{\numberline {2.2.1}WD}{5}
+\contentsline {subsection}{\numberline {2.2.2}CS}{5}
+\contentsline {section}{\numberline {2.3}Ions}{6}
+\contentsline {section}{\numberline {2.4}Variability}{6}
+\contentsline {section}{\numberline {2.5}Disk Modeling}{6}
+\contentsline {chapter}{\numberline {3}Photometry}{7}
+\contentsline {section}{\numberline {3.1}Introduction}{7}
+\contentsline {section}{\numberline {3.2}Datasets}{7}
+\contentsline {section}{\numberline {3.3}Multi-bar Cloud Model}{7}
+\contentsline {chapter}{\numberline {4}Nbody}{9}
+\contentsline {section}{\numberline {4.1}Background}{9}
+\contentsline {section}{\numberline {4.2}REBOUND}{9}
+\contentsline {section}{\numberline {4.3}Initializing Object}{9}
+\contentsline {section}{\numberline {4.4}Evolve Orbit}{10}
+\contentsline {section}{\numberline {4.5}Collisions}{10}
+\contentsline {chapter}{\numberline {A}Nonsense}{11}
+\contentsline {chapter}{\textbf {Bibliography}}{12}

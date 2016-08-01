@@ -1,0 +1,26 @@
+\chapter{Nbody}
+\label{chapter_nbody}
+
+Behold. 
+
+
+\section{Background}
+\label{nbody_background}
+Discuss past work done by Veras, Leinhardt, Debes. The problem of how to move an asteroid into a tidally disrupt-able orbit (Veras uses long-period highly eccentric orbits, Debes places a Jupiter to bump circular asteroid into instability). Say we just start at currently observed orbit and comment on possible inconsistencies there.
+
+\section{REBOUND}
+Discuss the package, importance of including collisions, any other work that uses it. Talk about how it handles collisions and choice of integrator method+timesteps.
+
+\section{Initializing Object}
+Using abundances from Chapter \ref{chapter_spectra}, devise different cross-sections for a total mass consistent with observed accretion rate. Talk about Kepler conjecture and problem of packing with differently sized particles. Justify choice of keeping all equally sized by radius and only varying mass. Compare cross-section diagram with rings to the cross-sections of generated asteroid/planetesimals. 
+
+\section{Evolve Orbit}
+Experiment with different timesteps with the maximum computationally doable N and evolve the orbit. At significant stages, evolve on much shorter timesteps and generate lightcurves (if possible). If/when it hits some kind of steady-state, comment on end-stage for system.
+
+\section{Collisions}
+Using all recorded collisions and Blum and Wurm etc. papers \citep[e.g.,][]{Beitz2016, Deckers2015} determine dust ejecta formation rate and compare to observed accretion rate. Some ratio could be determined and explained by a balance between gravity, magnetospheric attraction, radiation pressure blowout if you assume a size+mass distribution and that all interactions will be dominated by the WD. Maybe that's a stretch, but at least you can compute a ratio.
+
+Work notes: The code for the setup is done, the problem is just running it for longer with $>N$ and figuring out how to put it on the cluster. Also the collision section, I haven't checked to see how much checking for collisions affects the code speed.
+
+	 
+% \ifthenelse{\isodd{\thepage}}{\clearemptydoublepage}{}

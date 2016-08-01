@@ -1,10 +1,28 @@
-\begin{thebibliography}{1}
+\begin{thebibliography}{5}
 \expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+
+\bibitem[{{Beitz} {et~al.}(2016){Beitz}, {Blum}, {Parisi}, \&
+  {Trigo-Rodriguez}}]{Beitz2016}
+{Beitz}, E., {Blum}, J., {Parisi}, M.~G., \& {Trigo-Rodriguez}, J. 2016, ApJ,
+  824, 12
+
+\bibitem[{{Deckers} {et~al.}(2015){Deckers}, {Teiser}, \& {Wurm}}]{Deckers2015}
+{Deckers}, J., {Teiser}, J., \& {Wurm}, G. 2015, in AAS/Division for Planetary
+  Sciences Meeting Abstracts, Vol.~47, AAS/Division for Planetary Sciences
+  Meeting Abstracts, 302.02
+
+\bibitem[{{Manser} {et~al.}(2016){Manser}, {Gaensicke}, {Koester}, {Marsh}, \&
+  {Southworth}}]{Manser2016}
+{Manser}, C.~J., {Gaensicke}, B.~T., {Koester}, D., {Marsh}, T.~R., \&
+  {Southworth}, J. 2016, ArXiv e-prints
 
 \bibitem[{{Vanderburg} {et~al.}(2015){Vanderburg}, {Johnson}, {Rappaport},
   {Bieryla}, {Irwin}, {Lewis}, {Kipping}, {Brown}, {Dufour}, {Ciardi}, {Angus},
   {Schaefer}, {Latham}, {Charbonneau}, {Beichman}, {Eastman}, {McCrady},
   {Wittenmyer}, \& {Wright}}]{Vanderburg2015}
 {Vanderburg}, A., {et~al.} 2015, \nat, 526, 546
+
+\bibitem[{{Xu} {et~al.}(2016){Xu}, {Jura}, {Dufour}, \& {Zuckerman}}]{Xu2016}
+{Xu}, S., {Jura}, M., {Dufour}, P., \& {Zuckerman}, B. 2016, ApJ, 816, L22
 
 \end{thebibliography}

@@ -1,0 +1,30 @@
+\chapter{Photometry}
+\label{chapter_photo}
+
+\section{Introduction}
+\label{photo_intro}
+Talk about diversity and irregularity of signals seen, compare to Alien Zombie Comet star and a couple of other weird ones, particularly other disintegrating planet transits. Discuss the different periodicity analyses done by different groups (for K2, point out difficulties with spacecraft readjustment) and drifting periods in relation to TTVs and other phenomena if they exist (do more reading). Waterfall plot.
+
+
+Work notes: Mostly just text and reading. 
+
+\section{Datasets}
+\label{photo_datasets}
+Talk about all datasets you're using (if 24" data ends up working, talk about WD Transit Survey in detail, else ignore): the usual book-keeping of instruments, observing strategies, etc.
+
+Work notes: Mostly text, reading, Data Thief. 
+
+
+
+\section{Multi-bar Cloud Model}
+\label{photo_barcloud}
+Talk about bar cloud model as extremely simplified way to look transit signals.
+
+One version that takes an apparently single isolated transit and fits one cloud moving across it to vary $\tau$, width $w$, length $l$, impact parameter $b$. Do this for as many such isolated signals as you can find to inform priors for those parameters. Depending on how useful this ends up being, you can turn into a functional prior or just to set bounds on a uniform or log-uniform prior for the next bit. When starting this one, use a log-uniform prior for $\tau$, $w$, $l$. 
+
+Then use those priors for a version that uses $N_{clouds}$, each with their own $\tau$, $w$, $l$, $b$ (Might end up fixing this at $i = 90^{\circ}$),and period $P$ to fit an extended lightcurve with multiple transit signals.
+
+Work notes; Expand this into more sections as work on it progresses. None of this has been done and I don't know how much of it can actually be done. We'll find out. Note: if it ends up being better, turn $\tau$ into two things: a $\tau_0$ for the head of the bar and a $\tau$ decay rate, crudely approximating a comet. Might help with asymmetric signals. The pseudocode for all this is pretty simple in my head, but it will probably end up being a nightmare to implement any of it. 
+
+
+% \ifthenelse{\isodd{\thepage}}{\clearemptydoublepage}{}

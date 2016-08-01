@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9 64-bit) (preloaded format=pdflatex 2016.7.3)  11 JUL 2016 06:31
+This is pdfTeX, Version 3.14159265-2.6-1.40.17 (MiKTeX 2.9 64-bit) (preloaded format=pdflatex 2016.7.3)  1 AUG 2016 01:13
 entering extended mode
 **./thesis_master_template.tex
 (thesis_master_template.tex
@@ -302,7 +302,7 @@ Package caption Info: longtable package is loaded.
 Package: ltcaption 2013/06/09 v1.4-94 longtable captions (AR)
 ))
 (thesis_master_template.aux (0_Epigraph.aux) (0_Thanks.aux) (1_Introduction.aux
-) (2_Chap2.aux) (Appx.aux))
+) (2_Spectroscopy.aux) (3_Photometry.aux) (4_Nbody_Simulation.aux) (Appx.aux))
 \openout1 = `thesis_master_template.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 83.
@@ -427,43 +427,80 @@ Your command was ignored.
 Type  I <command> <return>  to replace it with another command,
 or  <return>  to continue without it.
 
-(thesis_master_template.toc)
+(thesis_master_template.toc [3
+
+
+])
 \tf@toc=\write3
 \openout3 = `thesis_master_template.toc'.
 
- [3
-
-
-]
+ [4]
 \openout2 = `1_Introduction.aux'.
 
  (1_Introduction.tex
 Chapter 1.
-<Figures/PrettyPic.png, id=18, 433.62pt x 329.5512pt>
+[1
+
+
+
+] <Figures/PrettyPic.png, id=24, 433.62pt x 329.5512pt>
 File: Figures/PrettyPic.png Graphic file (type png)
 
 <use Figures/PrettyPic.png>
-Package pdftex.def Info: Figures/PrettyPic.png used on input line 12.
+Package pdftex.def Info: Figures/PrettyPic.png used on input line 37.
 (pdftex.def)             Requested size: 433.61894pt x 329.55037pt.
-) [1
+)
 
+Package Fancyhdr Warning: \headheight is too small (4.51686pt): 
+ Make it at least 14.49998pt.
+ We now make it that large for the rest of the document.
+ This may cause the page layout to be inconsistent, however.
 
+[2] [3 <./Figures/PrettyPic.png>]
+\openout2 = `2_Spectroscopy.aux'.
 
- <./Figures/PrettyPic.png>]
-\openout2 = `2_Chap2.aux'.
-
- (2_Chap2.tex
+ (2_Spectroscopy.tex
 Chapter 2.
-) [2
+[4
+
+
+
+] [5]) [6]
+\openout2 = `3_Photometry.aux'.
+
+ (3_Photometry.tex
+Chapter 3.
+[7
+
+
+
+]) [8]
+\openout2 = `4_Nbody_Simulation.aux'.
+
+ (4_Nbody_Simulation.tex
+Chapter 4.
+
+Overfull \hbox (25.08969pt too wide) in paragraph at lines 12--13
+\OT1/cmr/m/n/12 uses it. Talk about how it han-dles col-li-sions and choice of 
+in-te-gra-tor method+timesteps. 
+ []
+
+[9
 
 
 
 ]
+Overfull \hbox (3.16539pt too wide) in paragraph at lines 18--19
+[]\OT1/cmr/m/n/12 Experiment with dif-fer-ent timesteps with the max-i-mum com-
+pu-ta-tion-ally doable
+ []
+
+) [10]
 \openout2 = `Appx.aux'.
 
  (Appx.tex
 Appendix A.
-) [3
+) [11
 
 
 
@@ -475,34 +512,40 @@ See the LaTeX manual or LaTeX Companion for explanation.
 Type  H <return>  for immediate help.
  ...                                              
                                                   
-l.1 \begin{thebibliography}{1}
+l.1 \begin{thebibliography}{5}
                               
 Your command was ignored.
 Type  I <command> <return>  to replace it with another command,
 or  <return>  to continue without it.
 
-) [4
+) [12
 
 
 ] (thesis_master_template.aux (0_Epigraph.aux) (0_Thanks.aux)
-(1_Introduction.aux) (2_Chap2.aux) (Appx.aux)) ) 
+(1_Introduction.aux) (2_Spectroscopy.aux) (3_Photometry.aux)
+(4_Nbody_Simulation.aux) (Appx.aux)) ) 
 Here is how much of TeX's memory you used:
- 5245 strings out of 493335
- 74246 string characters out of 3139258
- 147388 words of memory out of 3000000
- 8626 multiletter control sequences out of 15000+200000
+ 5287 strings out of 493335
+ 75041 string characters out of 3139258
+ 149388 words of memory out of 3000000
+ 8654 multiletter control sequences out of 15000+200000
  12314 words of font info for 46 fonts, out of 3000000 for 9000
  1141 hyphenation exceptions out of 8191
- 42i,10n,45p,341b,345s stack positions out of 5000i,500n,10000p,200000b,50000s
-<C:/Program Files/MiKTeX 2.9/fo
-nts/type1/public/amsfonts/cm/cmbx10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type
-1/public/amsfonts/cm/cmbx12.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public
-/amsfonts/cm/cmcsc10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfon
-ts/cm/cmr10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr
-12.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmti12.pfb>
-Output written on thesis_master_template.pdf (8 pages, 563834 bytes).
+ 42i,11n,51p,567b,345s stack positions out of 5000i,500n,10000p,200000b,50000s
+<C:/Program Files/MiKTeX 2.9/fonts/type1/
+public/amsfonts/cm/cmbx10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/a
+msfonts/cm/cmbx12.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/
+cm/cmcsc10.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi
+12.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmmi8.pfb><C
+:/Program Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Program
+ Files/MiKTeX 2.9/fonts/type1/public/amsfonts/cm/cmr12.pfb><C:/Program Files/Mi
+KTeX 2.9/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Program Files/MiKTeX 2.9/f
+onts/type1/public/amsfonts/cm/cmsy10.pfb><C:/Program Files/MiKTeX 2.9/fonts/typ
+e1/public/amsfonts/cm/cmsy8.pfb><C:/Program Files/MiKTeX 2.9/fonts/type1/public
+/amsfonts/cm/cmti12.pfb>
+Output written on thesis_master_template.pdf (17 pages, 632506 bytes).
 PDF statistics:
- 54 PDF objects out of 1000 (max. 8388607)
+ 102 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  6 words of extra memory for PDF output out of 10000 (max. 10000000)
 
