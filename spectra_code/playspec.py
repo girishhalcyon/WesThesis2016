@@ -6,7 +6,7 @@ from astropy.convolution import convolve, Gaussian1DKernel
 from scipy.optimize import minimize as optmin
 from scipy.integrate import simps
 from tempfile import TemporaryFile
-
+import seaborn as sns
 
 def wave2vel(wave, clambda):
     dellambda = wave - clambda
@@ -276,8 +276,8 @@ def fillerror(x, y, yerr = [], xerr = [], lim = (0, -1), color = 'k', linestyle 
         fig1.fillbetween(x,y-xerr, x+xerr, facecolor = 'r', ealpha = 0.5)
         return ax
 
-def readbin():
-    savfile = idlread('wd1145+017.sav')
+def readbin(fname='../spectra_data/wd1145+017.sav'):
+    savfile = idlread(fname)
     bluewave = savfile.sblue.wave[0]
     redwave = savfile.sred.wave[0]
     greenwave = savfile.sgreen.wave[0]
@@ -308,8 +308,8 @@ def readbin():
 
     np.save('databin10', [masterwave, masterflux, mastererr])
 
-def modelread():
-    wave, flux = datread('model2_dk.dat')
+def modelread(fname = '../spectra_data/model2_dk.dat'):
+    wave, flux = datread(fname)
     finitemask2 = np.where((np.isfinite(wave) & (np.isfinite(flux))))
     wave = wave[finitemask2]
     flux = flux[finitemask2]
@@ -324,13 +324,13 @@ def modelread():
 
     np.save('modelconvolve9', [restrictwave, restrictflux])
 
-def keckread(fname = 'databin5.npy'):
+def keckread(fname = '../spectra_data/Nov_Keck_bin5.npy'):
     return np.load(fname)
 
-def conmodelread(fname = 'model2convolve9.npy'):
+def conmodelread(fname = '../spectra_data/model2convolve9.npy'):
     return np.load(fname)
 
-def xshootread(fname = 'xshooter_all.var'):
+def xshootread(fname = '../spectra_data/xshooter_all.var'):
     xshooter = idlread(fname)
     twave = np.append(xshooter.wave_uvball, xshooter.wave_visall)
     xwave = np.append(twave, xshooter.wave_nirall)
@@ -338,16 +338,16 @@ def xshootread(fname = 'xshooter_all.var'):
     xflux = np.append(tflux, xshooter.flux_nirall)
     return [xwave, xflux]
 
-def readhires(fname = 'HIRES.WD1145+017.txt', skip = 502):
+def readhires(fname = '../spectra_data/HIRES.WD1145+017.txt', skip = 502):
     tempfile = np.loadtxt(fname, skiprows = skip)
     wave = tempfile[:,0]
     flux = tempfile[:,1]
     return [wave,flux]
 
-def readesi(fname = 'ESI.WD1145+017.txt', skip = 394):
+def readesi(fname = '../spectra_data/ESI.WD1145+017.txt', skip = 394):
     return readhires(fname = fname, skip = skip)
 
-def readmodel(fname = 'dbf1.txt', skip = 11):
+def readmodel(fname = '../spectra_data/dbf1.txt', skip = 11):
     return readhires(fname = fname, skip = skip)
 
 def waveplot(limits, keck = [], xshoot = [], paperhires = [],
@@ -361,7 +361,7 @@ def waveplot(limits, keck = [], xshoot = [], paperhires = [],
     fluxlist = []
 
     if  '4924' in title:
-        keckfile = idlread('wd1145+017.sav')
+        keckfile = idlread('../spectra_data/wd1145+017.sav')
         greenwave = keckfile.sgreen.wave[0]
         greenflux = keckfile.sgreen.flux[0]
         greenerr = keckfile.sgreen.err[0]
@@ -529,7 +529,7 @@ def waveplot(limits, keck = [], xshoot = [], paperhires = [],
 
 def velplot(limits, clambda, keck = [], xshoot = [], paperhires = [],
     paperesi = [], papermodel = [], model = [],
-    koff = 0.0, xoff = +15.0, poff = 0.0, moff = +55.0,
+    koff = 0.0, xoff = +15.0, poff = 0.0, moff = +42.0,
     title = None, plotx = None, ploty = None, mode = 'SAVE'):
 
     plow = limits[0]
@@ -540,7 +540,7 @@ def velplot(limits, clambda, keck = [], xshoot = [], paperhires = [],
     title = title + ' Velocity'
 
     if  '4923' in title:
-        keckfile = idlread('wd1145+017.sav')
+        keckfile = idlread('../spectra_data/wd1145+017.sav')
         greenwave = keckfile.sgreen.wave[0]
         greenflux = keckfile.sgreen.flux[0]
         greenerr = keckfile.sgreen.err[0]
@@ -741,6 +741,33 @@ def velplot(limits, clambda, keck = [], xshoot = [], paperhires = [],
     else:
         plt.show()
     plt.clf()
+
+def fit_trap(data_wave, data_flux, data_err, model_wave, model_flux, limits):
+    plow = limits[0]
+    phigh = limits[1]
+    if len(data_wave) > 0:
+        mask_1 = np.where((np.isfinite(data_wave[0])) & (np.isfinite(data_flux[0])))
+        kwave = data_wave[mask_1]
+        kflux = data_flux[mask_1]
+        kerr = data_err[mask_1]
+        ktemp = [kwave, kflux, kerr]
+        kwave = kwave[np.argsort(ktemp[0])]
+        kflux = kflux[np.argsort(ktemp[0])]
+        kerr = kerr[np.argsort(ktemp[0])]
+        krmask = np.where((kwave >= plow) & (kwave <= phigh))
+        krflux = kflux[krmask]
+        krerr = kerr[krmask]
+        krwave = kwave[krmask]
+        if len(krwave) > 0:
+            #knflux = krflux/iterfit(krwave, krflux, degree = 3, niter = 25)
+            krmask = np.where((0.0 < krflux/np.median(krflux)) & (krflux/np.median(krflux) < 1.5))
+            krwave = krwave[krmask]
+            krerr = krerr[krmask]
+            krflux = krflux[krmask]
+            knflux = krflux
+            knflux = knflux/np.median(knflux)
+            krvel = wave2vel(krwave, clambda) + koff
+
 if __name__ == '__main__':
     #limitarr = [(3571,3593), (3621, 3643), (3637, 3659), (3724, 3746), (3738, 3760)]
     #offsetarr = [-0.4, -0.4, -0.4, -0.45, -0.45]
@@ -767,114 +794,4 @@ if __name__ == '__main__':
     for i in range(0,len(clambdas)):
         velplot(limitarr[i], clambda = clambdas[i], keck = keck, xshoot = xshoot,
             model = model, paperesi = esi, paperhires = hires, papermodel = pmodel,
-            title = titles[i], mode = 'SAVE')
-
-    '''
-    testfunc = interp1d(masterwave, masterflux)
-    mask = np.where((restrictwave > np.sort(masterwave)[0]) & (restrictwave < np.sort(masterwave)[-1]))
-    normflux, normwave = polynorm(restrictwave[mask], restrictflux[mask], testfunc)
-    np.save('flat5model', [normwave, normflux])
-    print 'Continuum normalized model against raw data'
-
-    masterflux2, masterwave2 = polynorm2(masterwave, masterflux)
-    np.save('pnormdatabin5', [masterwave2, masterflux2, mastererr])
-
-    print 'Polynomial normalized model '
-    testfunc = interp1d(masterwave2, masterflux2)
-    mask = np.where((restrictwave > np.sort(masterwave2)[0]) & (restrictwave < np.sort(masterwave2)[-1]))
-    normflux2, normwave2 = polynorm(restrictwave[mask], restrictflux[mask], testfunc)
-
-    print 'Continuum normalized model against polynomial flattened data'
-
-    #np.save('databin5', [masterwave, masterflux, mastererr])
-    np.save('pnormdatabin5', [masterwave2, masterflux2, mastererr])
-    #np.save('modelconvolve9', [restrictwave, restrictflux])
-
-    np.save('flat5model', [normwave, normflux])
-    np.save('poly5model', [normwave2, normflux2])
-
-    print 'Saved npy files'
-
-    databin5 = np.load('databin5.npy')
-    poly5model = np.load('poly5model.npy')
-    pnormdatabin5 = np.load('pnormdatabin5.npy')
-    flat5model = np.load('flat5model.npy')
-
-    normwave = flat5model[0]
-    normflux = flat5model[1]
-    normwave2 = poly5model[0]
-    normflux2 = poly5model[1]
-
-    masterwave = databin5[0]
-    masterflux = databin5[1]
-    masterwave2 = pnormdatabin5[0]
-    masterflux2 = pnormdatabin5[1]
-    mastererr = pnormdatabin5[2]
-
-    print normwave, normwave2, masterwave, masterwave2
-    print normflux, normflux2, masterflux, masterflux2
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.errorbar(masterwave, masterflux, yerr = mastererr, fmt = '.k', alpha = 0.4)
-    ax.plot(normwave, normflux, '-r')
-
-    #plt.xlim((3050,3150))
-    ax.set_ylim((-0.1, 1.5))
-    def onclick(event):
-        print event.xdata
-    cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event))
-
-    plt.show()
-    plt.clf()
-
-    ranges = [(4230,4242), (3683,3690), (3702,3710), (3768,3774), (3346,3355),
-            (3498, 3504), (3512, 3520), (3628, 3636), (3740, 3746), (3746, 3754),
-            (4176, 4184), (4348, 4358), (4518, 4530), (4544, 4556), (4554, 4562),
-            (4575, 4600), (4620, 4645), (4680, 4760), (5305, 5330), (5560, 5620)]
-
-    areas = np.empty((len(ranges), 3))
-    widths = np.empty((len(ranges), 3))
-
-    for i in range(0,len(ranges)):
-        datamask = np.where((masterwave2 >= ranges[i][0] - 5.0) & (masterwave2 <= ranges[i][1] + 5.0))
-        normmask = np.where((normwave >= ranges[i][0] - 8.0) & (normwave <= ranges[i][1] + 8.0))
-        datay = masterflux2[datamask]
-        datax = masterwave2[datamask]
-        modely = normflux[normmask]
-        modelx = normwave[normmask]
-
-
-
-        datay = datay[np.where(np.isfinite(datay))]
-        datax = datax[np.where(np.isfinite(datax))]
-        modely = modely[np.where(np.isfinite(modely))]
-        modelx = modelx[np.where(np.isfinite(modelx))]
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        def onclick(event):
-            print event.xdata
-        cid = fig.canvas.mpl_connect('button_press_event', lambda event: onclick(event))
-
-        plt.errorbar(datax, datay, yerr = mastererr[datamask], fmt = '.k', alpha = 0.4)
-        plt.plot(modelx, modely, '-r')
-        plt.show()
-
-        modelcont, modelline = linecont([modelx, datax], [modely, datay])
-        datacont, dataline = linecont([datax, modelx], [datay, modely])
-
-        eqx = [datax, modelx]
-        eqy = [datay, modely]
-        eqline = [dataline, modelline]
-        eqcont = [datacont, modelcont]
-
-        area, eqwidth = equilwidth(eqx, eqy, eqline, eqcont)
-        areas[i] = area
-        widths[i] = eqwidth
-        np.save('areas', areas)
-        np.save('eqwidths', widths)
-
-    widths = np.load('eqwidths.npy')
-    print widths[:,2]
-    print widths[:,0] - widths[:,1]
-    '''
+            title = titles[i], mode = 'SHOW')

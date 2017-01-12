@@ -3,10 +3,11 @@ import matplotlib.pyplot as plt
 from playspec import *
 from scipy.integrate import simps
 from scipy.interpolate import interp1d
-from scipy.optimize import minimize as optmin
+from scipy.optimize import leastsq as optmin
 #from lmfit import minimize as optmin
 from lmfit import Parameters
-
+import pandas as pd
+from astropy.io import ascii as asc
 
 def addparams(params):
     depth = params[3]
@@ -69,28 +70,29 @@ def trapmodel(params, x):
     endshift = params[5]
     x2 = center - (width / 2.0)
     x3 = center + (width / 2.0)
-    x1 = x2 - startshift
-    slope = (amplitude)/(x2 - x1)
-    x4 = x3 + (amplitude / slope) + endshift
-    slope2 = (amplitude)/(x4 - x3)
-
+    x1 = x2 + startshift
+    x4 = x3 + endshift
+    slope_1 = amplitude/(x2 - x1)
+    slope_2 = -amplitude/(x4 - x3)
     # Compute model values in pieces between the change points
+    range_start = np.logical_and(x < x1, x > -1000.0)
     range_a = np.logical_and(x >= x1, x < x2)
     range_b = np.logical_and(x >= x2, x < x3)
     range_c = np.logical_and(x >= x3, x < x4)
-    val_a = slope * (x - x1) + offset
+    range_end = np.logical_and(x >= x4, x < 1000.0)
+    val_start = offset
+    val_a = offset + slope_1*(x - x1)
     val_b = amplitude + offset
-    val_c = slope2 * (x4 - x) + offset
-    return np.select([range_a, range_b, range_c], [val_a, val_b, val_c], default = offset)
+    val_c = offset + amplitude + slope_2*(x - x3)
+    val_end = offset
+    return np.select([range_start, range_a, range_b, range_c, range_end], [val_start, val_a, val_b, val_c, val_end], default = offset)
 
 def trapminfunc(params, x, y, yerr = []):
     model = trapmodel(params, x)
-    if params[2] <= 0:
-        return -np.inf
     if len(yerr) > 0:
-        return np.sum(((model - y)**2.0)/yerr)
+        return (((model - y)**2.0)/yerr)
     else:
-        return np.sum((model-y)**2.0)
+        return ((model-y)**2.0)
 
 
 def boxminfunc(params, x, y, yerr = []):
@@ -133,7 +135,7 @@ def sigtest(x,y,start,end, depth):
     return significance
 
 def fullxread():
-    xshoot = idlread('allxshooter3.var')
+    xshoot = idlread('../spectra_data/allxshooter3.var')
     xwave1 = np.append(xshoot.wave_uvballfeb, xshoot.wave_visallfeb)
     xwave2 = np.append(xshoot.wave_uvballmar, xshoot.wave_visallmar)
     xwave3 = np.append(xshoot.wave_uvballapr, xshoot.wave_visallapr)
@@ -149,9 +151,9 @@ def fullxread():
     return x1data, x2data, x3data
 
 def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
-    xdata3 = [], paperdata = [], model = [], moff = +50.0,
+    xdata3 = [], paperdata = [], model = [], moff = +42.0,
     title = 'Comparison Plot', plotx = None, ploty = None, mode = 'SAVE',
-    writename = 'XS_Fe_II_testlines.txt', ion = 'Iron'):
+    writename = 'ion_results.txt', ion = 'Fe II'):
 
     plow = limits[0]
     phigh = limits[1]
@@ -168,11 +170,11 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
     xsig2 = 0.0
     xsig3 = 0.0
     xusig = 0.0
-    keckres = [-0.5, -20, 20, 0.0, 1.0, 100.0]
-    x1res = [-0.5, -20, 20, 0.0, 1.0, 100.0]
-    x2res = [-0.5, -20, 20, 0.0, 1.0, 100.0]
-    x3res = [-0.5, -20, 20, 0.0, 1.0, 100.0]
-    xures = [-0.5, -20, 20, 0.0, 1.0, 100.0]
+    keckres = [-0.5, -50, 100, 0.0, 0.0, 100.0]
+    x1res = [-0.5, -50, 100, 0.0, 0.0, 100.0]
+    x2res = [-0.5, -50, 100, 0.0, 0.0, 100.0]
+    x3res = [-0.5, -50, 100, 0.0, 0.0, 100.0]
+    xures = [-0.5, -50, 100, 0.0, 0.0, 100.0]
     xshootsig = 0.0
     xcsflux1= []
     xcsflux2 = []
@@ -201,8 +203,8 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
             mrflux = mrflux[mrmask]
             mnflux = mrflux
             mnflux = mnflux/np.median(mnflux)
-            #mrvel = wave2vel(vac2air(mrwave), clambda) + moff
-            mrvel = wave2vel(mrwave, clambda) + moff
+            mrvel =wave2vel(vac2air(vel2wave(wave2vel(mrwave, clambda) + moff, clambda)), clambda) + 100.0
+            #mrvel = wave2vel(mrwave, clambda)
             #ax.plot(mrvel, mnflux, '--r', label = 'Stellar Model')
             modelfunc = interp1d(mrvel, mnflux)
 
@@ -236,7 +238,8 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
             xerr1 = xnerr
 
             x1res= optmin(trapminfunc, x1res, args = (xrvel, csflux, xnerr))
-            params = x1res.x
+            params = x1res[0]
+
 
             amplitude = params[0]
             startshift = params[1]
@@ -244,12 +247,12 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
             center = params[3]
             offset = params[4]
             endshift = params[5]
-            x2 = center - width / 2.
-            x3 = center + width / 2.
-            x1 = x2 - startshift
-            slope = (amplitude)/(x2 - x1)
-            x4 = x3 + (amplitude / slope) + endshift
-            slope2 = (amplitude)/(x4 - x3)
+            x2 = center - (width / 2.0)
+            x3 = center + (width / 2.0)
+            x1 = x2 + startshift
+            x4 = x3 + endshift
+            slope_1 = amplitude/(x2 - x1)
+            slope_2 = -amplitude/(x4 - x3)
 
             x1start = x1
             x1end = x4
@@ -288,7 +291,7 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
             xerr2 = xnerr
 
             x2res= optmin(trapminfunc, x2res, args = (xrvel, csflux, xnerr))
-            params = x2res.x
+            params = x2res[0]
 
             amplitude = params[0]
             startshift = params[1]
@@ -296,12 +299,12 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
             center = params[3]
             offset = params[4]
             endshift = params[5]
-            x2 = center - width / 2.
-            x3 = center + width / 2.
-            x1 = x2 - startshift
-            slope = (amplitude)/(x2 - x1)
-            x4 = x3 + (amplitude / slope) + endshift
-            slope2 = (amplitude)/(x4 - x3)
+            x2 = center - (width / 2.0)
+            x3 = center + (width / 2.0)
+            x1 = x2 + startshift
+            x4 = x3 + endshift
+            slope_1 = amplitude/(x2 - x1)
+            slope_2 = -amplitude/(x4 - x3)
 
             x2start = x1
             x2end = x4
@@ -340,7 +343,7 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
             xerr3 = xnerr
 
             x3res= optmin(trapminfunc, x3res, args = (xrvel, csflux, xnerr))
-            params = x3res.x
+            params = x3res[0]
 
             amplitude = params[0]
             startshift = params[1]
@@ -348,12 +351,12 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
             center = params[3]
             offset = params[4]
             endshift = params[5]
-            x2 = center - width / 2.
-            x3 = center + width / 2.
-            x1 = x2 - startshift
-            slope = (amplitude)/(x2 - x1)
-            x4 = x3 + (amplitude / slope) + endshift
-            slope2 = (amplitude)/(x4 - x3)
+            x2 = center - (width / 2.0)
+            x3 = center + (width / 2.0)
+            x1 = x2 + startshift
+            x4 = x3 + endshift
+            slope_1 = amplitude/(x2 - x1)
+            slope_2 = -amplitude/(x4 - x3)
 
             x3start = x1
             x3end = x4
@@ -378,7 +381,7 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
 
     if xshootsig >=3.0:
         if  '4923' in title:
-            keckfile = idlread('wd1145+017.sav')
+            keckfile = idlread('../spectra_data/wd1145+017.sav')
             greenwave = keckfile.sgreen.wave[0]
             greenflux = keckfile.sgreen.flux[0]
             greenerr = keckfile.sgreen.err[0]
@@ -415,8 +418,8 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
                 kdatavel = krvel
 
 
-                keckres = optmin(trapminfunc, [-0.5, -20, 20, 0.0, 1.0, 100.0], args = (krvel, csflux, knerr))
-                params = keckres.x
+                keckres = optmin(trapminfunc, [-0.5, -20, 20, 0.0, 0.0, 100.0], args = (krvel, csflux, knerr))
+                params = keckres[0]
 
                 amplitude = params[0]
                 startshift = params[1]
@@ -424,12 +427,12 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
                 center = params[3]
                 offset = params[4]
                 endshift = params[5]
-                x2 = center - width / 2.
-                x3 = center + width / 2.
-                x1 = x2 - startshift
-                slope = (amplitude)/(x2 - x1)
-                x4 = x3 + (amplitude / slope) + endshift
-                slope2 = (amplitude)/(x4 - x3)
+                x2 = center - (width / 2.0)
+                x3 = center + (width / 2.0)
+                x1 = x2 + startshift
+                x4 = x3 + endshift
+                slope_1 = amplitude/(x2 - x1)
+                slope_2 = -amplitude/(x4 - x3)
                 boxsigma = np.std(csflux[np.where((krvel <= x1) | (krvel >= x4))])
                 kecksigma = abs(amplitude)/boxsigma
 
@@ -466,18 +469,20 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
                 xucompflux = pnflux
                 xudatavel = prvel
 
-                xures = optmin(trapminfunc, [-0.5, -20, 20, 0.0, 1.0, 100.0], args = (prvel, csflux))
-                params = xures.x
+                xures = optmin(trapminfunc, [-0.5, -20, 20, 0.0, 0.0, 100.0], args = (prvel, csflux))
+                params = xures[0]
                 amplitude = params[0]
                 slope = params[1]
                 width = params[2]
                 center = params[3]
                 offset = params[4]
                 endshift = params[5]
-                x2 = center - width / 2.
-                x3 = center + width / 2.
-                x1 = x2 - amplitude / slope
-                x4 = x3 + (amplitude / slope) + endshift
+                x2 = center - (width / 2.0)
+                x3 = center + (width / 2.0)
+                x1 = x2 + startshift
+                x4 = x3 + endshift
+                slope_1 = amplitude/(x2 - x1)
+                slope_2 = -amplitude/(x4 - x3)
                 boxsigma = np.std(csflux[np.where((prvel <= x1) | (prvel >= x4))])
                 xusigma = abs(amplitude)/boxsigma
 
@@ -516,7 +521,7 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
             compplot.set_xlim((-300.0, 300.0))
             compplot.set_ylim((complow, comphigh))
             compplot.plot(mrvel, mnflux, '-r')
-            compplot.plot([40.0]*100, np.linspace(complow, comphigh, 100), '-b')
+            compplot.plot([moff]*100, np.linspace(complow, comphigh, 100), '-b')
 
 
             if len(kcsflux) > 0:
@@ -536,11 +541,11 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
         allxerr = [xerr1, xerr2, xerr3]
         xlabels = ['Feb VLT', 'Mar VLT', 'Apr VLT']
         bestflux = allxflux[bestx]
-        allxres = [x1res.x, x2res.x, x3res.x]
+        allxres = [x1res[0], x2res[0], x3res[0]]
         mask = np.where((allxvel[bestx] >= allxstart[bestx]) & (allxvel[bestx] <= allxend[bestx]))
         intwave = vel2wave(allxvel[bestx][mask], clambda)
         width = trapwidth(intwave, bestflux[mask])
-        writetext = (str(clambda) + ' ' + str(allxsigma[bestx])
+        writetext = (ion + ' ' + str(clambda) + ' ' + str(allxsigma[bestx])
             + ' ' + str(width) + ' ' + str(allxstart[bestx]) + ' '
             + str(allxend[bestx]) + ' ' + str(abs(allxres[bestx][0])))
         with open(writename, 'a') as writefile:
@@ -552,9 +557,10 @@ def velboxplot(limits, clambda, kdata= [], xdata1 = [], xdata2 = [],
         trapplot.legend(loc = 'best')
         if mode == 'SAVE':
             fname = title.replace(' ', '_') + '.pdf'
-            plt.savefig('shortsethplots2/'+ fname)
+            plt.savefig('trap_plots/'+ fname)
         else:
             plt.show()
+        plt.clf()
 
 if __name__ == '__main__':
     #clambdas = [4923.921]
@@ -573,182 +579,24 @@ if __name__ == '__main__':
     x1data, x2data, x3data = fullxread()
 
 
-    fname = 'sethlist2.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
+    fname = '../spectra_data/seth_line_list.txt'
+    df = asc.read(fname).to_pandas()
+    clambdas = df.RWave
+    temptitles = df.Ion
+    comments = df.Comments
     mask = np.where((clambdas > 3000.0) & (clambdas < 9100.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    sortmask = np.argsort(clambdas)
-    temptitles = temptitles[sortmask]
-    clambdas = clambdas[sortmask]
-    titles = [str(clambdas[i]).replace('.', '-') + ' ' + temptitles[i,0] + ' ' + temptitles[i,1] for i in range(0,len(clambdas))]
+    clambdas = np.array(clambdas[mask])
+    temptitles = np.array(temptitles[mask])
+
+    titles = [temptitles[i] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
     limitarr = [(vel2wave(-400.0, clambda), vel2wave(+400.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'sethlines2.txt', ion = 'Unobtainium')
-        print i
+    for i in range(220,len(clambdas)):
+        try:
+            velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
+                title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
+                xdata3 = x3data, paperdata = hires,
+                writename = 'ion_results.txt', ion = temptitles[i])
+            print i, 'out of ', len(clambdas)
+        except:
+            print temptitles[i], ' ', clambdas[i], ' failed'
     print (fname + ' done')
-    '''
-    fname = 'Ca_III_lines.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
-    mask = np.where((clambdas > 3250.0) & (clambdas < 9130.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    titles = [temptitles[i,0] + ' ' + temptitles[i,1] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
-    limitarr = [(vel2wave(-700.0, clambda), vel2wave(+700.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'Ca_III_testlines.txt', ion = 'Calcium')
-        plt.close()
-    print (fname + ' done')
-
-    fname = 'S_I_lines.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
-    mask = np.where((clambdas > 3250.0) & (clambdas < 9130.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    titles = [temptitles[i,0] + ' ' + temptitles[i,1] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
-    limitarr = [(vel2wave(-700.0, clambda), vel2wave(+700.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'S_I_testlines.txt', ion = 'Sulphur')
-        plt.close()
-    print (fname + ' done')
-
-    fname = 'S_II_lines.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
-    mask = np.where((clambdas > 3250.0) & (clambdas < 9130.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    titles = [temptitles[i,0] + ' ' + temptitles[i,1] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
-    limitarr = [(vel2wave(-700.0, clambda), vel2wave(+700.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'S_II_testlines.txt', ion = 'Sulphur')
-        plt.close()
-    print (fname + ' done')
-
-    fname = 'S_III_lines.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
-    mask = np.where((clambdas > 3250.0) & (clambdas < 9130.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    titles = [temptitles[i,0] + ' ' + temptitles[i,1] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
-    limitarr = [(vel2wave(-700.0, clambda), vel2wave(+700.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'S_III_testlines.txt', ion = 'Sulphur')
-        plt.close()
-    print (fname + ' done')
-
-    fname = 'S_IV_lines.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
-    mask = np.where((clambdas > 3250.0) & (clambdas < 9130.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    titles = [temptitles[i,0] + ' ' + temptitles[i,1] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
-    limitarr = [(vel2wave(-700.0, clambda), vel2wave(+700.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'S_IV_testlines.txt', ion = 'Sulphur')
-        plt.close()
-    print (fname + ' done')
-
-    fname = 'P_I_lines.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
-    mask = np.where((clambdas > 3250.0) & (clambdas < 9130.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    titles = [temptitles[i,0] + ' ' + temptitles[i,1] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
-    limitarr = [(vel2wave(-700.0, clambda), vel2wave(+700.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'P_I_testlines.txt', ion = 'Phosphorus')
-        plt.close()
-    print (fname + ' done')
-
-    fname = 'P_II_lines.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
-    mask = np.where((clambdas > 3250.0) & (clambdas < 9130.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    titles = [temptitles[i,0] + ' ' + temptitles[i,1] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
-    limitarr = [(vel2wave(-700.0, clambda), vel2wave(+700.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'P_II_testlines.txt', ion = 'Phosphorus')
-        plt.close()
-    print (fname + ' done')
-
-    fname = 'P_III_lines.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
-    mask = np.where((clambdas > 3250.0) & (clambdas < 9130.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    titles = [temptitles[i,0] + ' ' + temptitles[i,1] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
-    limitarr = [(vel2wave(-700.0, clambda), vel2wave(+700.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'P_III_testlines.txt', ion = 'Phosphorus')
-        plt.close()
-    print (fname + ' done')
-
-    fname = 'P_IV_lines.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
-    mask = np.where((clambdas > 3250.0) & (clambdas < 9130.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    titles = [temptitles[i,0] + ' ' + temptitles[i,1] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
-    limitarr = [(vel2wave(-700.0, clambda), vel2wave(+700.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'P_IV_testlines.txt', ion = 'Phosphorus')
-        plt.close()
-    print (fname + ' done')
-
-    fname = 'P_V_lines.txt'
-    temptitles = np.loadtxt(fname, usecols = [3,4], dtype = 'string')
-    clambdas = 10.0*np.loadtxt(fname, usecols = [0])
-    mask = np.where((clambdas > 3250.0) & (clambdas < 9130.0))[0]
-    clambdas = clambdas[mask]
-    temptitles = temptitles[mask]
-    titles = [temptitles[i,0] + ' ' + temptitles[i,1] + ' ' + str(clambdas[i]).replace('.', '-') for i in range(0,len(clambdas))]
-    limitarr = [(vel2wave(-700.0, clambda), vel2wave(+700.0, clambda)) for clambda in clambdas]
-    for i in range(0,len(clambdas)):
-        velboxplot(limitarr[i], clambda = clambdas[i], kdata = keck, model = model,
-            title = titles[i], mode = 'SAVE', xdata1 = x1data, xdata2 = x2data,
-            xdata3 = x3data, paperdata = hires,
-            writename = 'P_V_testlines.txt', ion = 'Phosphorus')
-        plt.close()
-    print (fname + ' done')
-    '''
