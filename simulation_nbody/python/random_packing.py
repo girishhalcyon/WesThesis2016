@@ -1,8 +1,7 @@
 import rebound as reb
 import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
+#from mpl_toolkits.mplot3d import Axes3D
 import matplotlib
-matplotlib.use('Qt4Agg')
 import matplotlib.pyplot as plt
 
 np.random.seed(1234)
@@ -194,34 +193,92 @@ class setup_sphere(object):
             p1.add_to_sim_cartesian()
 
 
-def plot_3D_simulation(rebsim, color_mass=True, color_dens=False, mode='SHOW'):
-    ax = plt.subplot(111, projection='3d')
+# def plot_3D_simulation(rebsim, color_mass=False, color_dens=True, mode='SHOW'):
+    # ax = plt.subplot(111, projection='3d')
+    # N_tot = rebsim.N
+    # particle_arr = rebsim.particles
+    # xs = np.empty((N_tot))
+    # ys = np.empty_like(xs)
+    # zs = np.empty_like(xs)
+    # rad_arr = np.empty_like(xs)
+    # if any([color_mass, color_dens]):
+        # mass_arr = np.empty_like(xs)
+    # else:
+        # pass
+    # for i in range(0, N_tot):
+        # particle = particle_arr[i]
+        # xs[i] = particle.x
+        # ys[i] = particle.y
+        # zs[i] = particle.z
+        # rad_arr[i] = particle.r
+        # if any([color_mass, color_dens]):
+            # mass_arr[i] = particle.m
+    # argloc = np.argmax(mass_arr)
+    # xs = np.delete(xs, argloc)
+    # ys = np.delete(ys, argloc)
+    # zs = np.delete(zs, argloc)
+    # rad_arr = np.delete(rad_arr, argloc)
+    # mass_arr = np.delete(mass_arr, argloc)
+    # if color_dens:
+        # print xs, rad_arr
+        # dens_arr = mass_arr/((4.0/3.0)*np.pi*(rad_arr**3.0))
+        # plot_fig = ax.scatter(xs, ys, zs, s=(rad_arr))
+    # else:
+        # plot_fig = ax.scatter(xs, ys, zs, s=(rad_arr),
+
+    #plt.colorbar(plot_fig)
+    # if mode == 'SHOW':
+        # plt.show()
+    # elif mode == 'RETURN':
+        # return fig
+    # else:
+        # savename = mode + '.pdf'
+        # plt.savefig(savename)
+
+
+def plot_2D_simulation(rebsim, color_mass=False, color_dens=True, mode='SHOW'):
+    fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
     N_tot = rebsim.N
     particle_arr = rebsim.particles
-    xpos_arr = np.empty((N_tot))
-    ypos_arr = np.empty_like(xpos_arr)
-    zpos_arr = np.empty_like(xpos_arr)
-    rad_arr = np.empty_like(xpos_arr)
+    xs = np.empty((N_tot))
+    ys = np.empty_like(xs)
+    zs = np.empty_like(xs)
+    rad_arr = np.empty_like(xs)
     if any([color_mass, color_dens]):
-        mass_arr = np.empty_like(xpos_arr)
+        mass_arr = np.empty_like(xs)
     else:
         pass
     for i in range(0, N_tot):
         particle = particle_arr[i]
-        xpos_arr[i] = particle.x
-        ypos_arr[i] = particle.y
-        zpos_arr[i] = particle.z
+        xs[i] = particle.x
+        ys[i] = particle.y
+        zs[i] = particle.z
         rad_arr[i] = particle.r
         if any([color_mass, color_dens]):
             mass_arr[i] = particle.m
+    argloc = np.argmax(mass_arr)
+    xs = np.delete(xs, argloc)
+    ys = np.delete(ys, argloc)
+    zs = np.delete(zs, argloc)
+    rad_arr = np.delete(rad_arr, argloc)
+    mass_arr = np.delete(mass_arr, argloc)
     if color_dens:
-        dens_arr = mass_arr/(4.0*np.pi*(rad_arr**3.0))
-        plot_fig = ax.scatter(x=xpos_arr, y=ypos_arr, z=zpos_arr,
-                              c=dens_arr, s=(rad_arr**2.0))
+        dens_arr = mass_arr/((4.0/3.0)*np.pi*(rad_arr**3.0))
+        mappable = ax1.scatter(xs, ys, c=dens_arr)
+        ax1.set_aspect('equal')
+        ax1.set_title('Top-down view')
+        map_2 = ax2.scatter(xs, zs, c=dens_arr)
+        # ax2.set_ylim(ax2.get_xlim())
+        ax2.set_title('Edge-on view')
     else:
-        plot_fig = ax.scatter(xpos_arr, ypos_arr, zpos_arr, s=(rad_arr**3.0),
-                              c=mass_arr)
-    plt.colorbar(plot_fig)
+        mappable = ax1.scatter(xs, ys, c=mass_arr)
+        ax1.set_aspect('equal')
+        ax1.set_title('Top-down view')
+        map_2 = ax2.scatter(xs, zs, c=mass_arr)
+        # ax2.set_ylim(ax2.get_xlim())
+        ax2.set_title('Edge-on view')
+    plt.colorbar(mappable, ax=ax1)
+    plt.colorbar(map_2, ax=ax2)
     if mode == 'SHOW':
         plt.show()
     elif mode == 'RETURN':
@@ -229,6 +286,7 @@ def plot_3D_simulation(rebsim, color_mass=True, color_dens=False, mode='SHOW'):
     else:
         savename = mode + '.pdf'
         plt.savefig(savename)
+
 
 if __name__ == '__main__':
     test_sim = reb.Simulation()
