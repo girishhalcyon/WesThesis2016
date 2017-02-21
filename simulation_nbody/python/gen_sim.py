@@ -1,11 +1,86 @@
 import numpy as np
 import pandas as pd
+import rebound
+import os
+import matplotlib.pyplot as plt
+from matplotlib.offsetbox import AnchoredOffsetbox
 
-packing_path = str('/Volumes/westep/girish/' +
-                   'WesThesis2016/simulation_nbody/python/packings_dir')
+packing_path = str('../../../packings_dir')
+
+save_path = str('.')
 
 
-def plot_2D_simulation(rebsim, color_mass=False, color_dens=True, mode='SHOW'):
+class AnchoredScaleBar(AnchoredOffsetbox):
+    def __init__(self, transform, sizex=0, sizey=0, labelx=None, labely=None,
+                 loc=3, pad=0.1, borderpad=0.1, sep=2, prop=None, **kwargs):
+        """
+        Draw a horizontal and/or vertical  bar with the size in data coordinate
+        of the give axes. A label will be drawn underneath (center-aligned).
+        - transform : the coordinate frame (typically axes.transData)
+        - sizex,sizey : width of x,y bar, in data units. 0 to omit
+        - labelx,labely : labels for x,y bars; None to omit
+        - loc : position in containing axes
+        - pad, borderpad : padding, in fraction of legend font size (or prop)
+        - sep : separation between labels and bars in points.
+        - **kwargs : additional arguments passed to base class constructor
+        """
+        from matplotlib.patches import Rectangle
+        from matplotlib.offsetbox import AuxTransformBox, VPacker, HPacker
+        from matplotlib.offsetbox import TextArea, DrawingArea
+        bars = AuxTransformBox(transform)
+        if sizex:
+            bars.add_artist(Rectangle((0, 0), sizex, 0, fc="none"))
+        if sizey:
+            bars.add_artist(Rectangle((0, 0), 0, sizey, fc="none"))
+
+        if sizex and labelx:
+            bars = VPacker(children=[bars, TextArea(labelx,
+                                                    minimumdescent=False)],
+                           align="center", pad=0, sep=sep)
+        if sizey and labely:
+            bars = HPacker(children=[TextArea(labely), bars],
+                           align="center", pad=0, sep=sep)
+
+        AnchoredOffsetbox.__init__(self, loc, pad=pad, borderpad=borderpad,
+                                   child=bars, prop=prop, frameon=False,
+                                   **kwargs)
+
+
+def add_scalebar(ax, matchx=True, matchy=True, hidex=False, hidey=False,
+                 **kwargs):
+    """ Add scalebars to axes
+    Adds a set of scale bars to *ax*, matching the size to the ticks of plot
+    and optionally hiding the x and y axes
+    - ax : the axis to attach ticks to
+    - matchx,matchy : if True, set size of scale bars to spacing between ticks
+                    if False, size should be set using sizex and sizey params
+    - hidex,hidey : if True, hide x-axis and y-axis of parent
+    - **kwargs : additional arguments passed to AnchoredScaleBars
+    Returns created scalebar object
+    """
+    def f(axis):
+        l_1 = axis.get_majorticklocs()
+        return len(l_1) > 1 and (l_1[1] - l_1[0])
+    if matchx:
+        kwargs['sizex'] = f(ax.xaxis)
+        kwargs['labelx'] = str(kwargs['sizex'])
+    if matchy:
+        kwargs['sizey'] = f(ax.yaxis)
+        kwargs['labely'] = str(kwargs['sizey'])
+
+    sb = AnchoredScaleBar(ax.transData, **kwargs)
+    ax.add_artist(sb)
+
+    if hidex:
+        ax.xaxis.set_visible(False)
+    if hidey:
+        ax.yaxis.set_visible(False)
+
+    return sb
+
+
+def plot_2D_simulation(rebsim, color_mass=False, color_dens=True, mode='SHOW',
+                       inflate=100.0, wd_status='SMALL'):
     fig, (ax1, ax2) = plt.subplots(nrows=1, ncols=2, figsize=(15, 5))
     N_tot = rebsim.N
     particle_arr = rebsim.particles
@@ -25,27 +100,33 @@ def plot_2D_simulation(rebsim, color_mass=False, color_dens=True, mode='SHOW'):
         rad_arr[i] = particle.r
         if any([color_mass, color_dens]):
             mass_arr[i] = particle.m
-    argloc = np.argmax(mass_arr)
-    xs = np.delete(xs, argloc)
-    ys = np.delete(ys, argloc)
-    zs = np.delete(zs, argloc)
-    rad_arr = np.delete(rad_arr, argloc)
-    mass_arr = np.delete(mass_arr, argloc)
+    if wd_status == 'HIDE':
+        argloc = np.argmax(mass_arr)
+        xs = np.delete(xs, argloc)
+        ys = np.delete(ys, argloc)
+        zs = np.delete(zs, argloc)
+        rad_arr = np.delete(rad_arr, argloc)
+        mass_arr = np.delete(mass_arr, argloc)
+    elif wd_status == 'SMALL':
+        argloc = np.argmax(mass_arr)
+        mass_arr[argloc] = np.median(mass_arr)
     if color_dens:
         dens_arr = mass_arr/((4.0/3.0)*np.pi*(rad_arr**3.0))
-        mappable = ax1.scatter(xs, ys, c=dens_arr)
+        mappable = ax1.scatter(xs, ys, c=dens_arr, s=inflate*rad_arr)
         ax1.set_aspect('equal')
         ax1.set_title('Top-down view')
-        map_2 = ax2.scatter(xs, zs, c=dens_arr)
+        map_2 = ax2.scatter(xs, zs, c=dens_arr, s=inflate*rad_arr)
         # ax2.set_ylim(ax2.get_xlim())
         ax2.set_title('Edge-on view')
     else:
-        mappable = ax1.scatter(xs, ys, c=mass_arr)
-        ax1.set_aspect('equal')
+        mappable = ax1.scatter(xs, ys, c=mass_arr, s=inflate*rad_arr)
+        # ax1.set_aspect('equal')
         ax1.set_title('Top-down view')
-        map_2 = ax2.scatter(xs, zs, c=mass_arr)
+        map_2 = ax2.scatter(xs, zs, c=mass_arr, s=inflate*rad_arr)
         # ax2.set_ylim(ax2.get_xlim())
         ax2.set_title('Edge-on view')
+    add_scalebar(ax1)
+    add_scalebar(ax2)
     plt.colorbar(mappable, ax=ax1)
     plt.colorbar(map_2, ax=ax2)
     if mode == 'SHOW':
@@ -55,6 +136,56 @@ def plot_2D_simulation(rebsim, color_mass=False, color_dens=True, mode='SHOW'):
     else:
         savename = mode + '.pdf'
         plt.savefig(savename)
+    plt.clf()
+
+
+def plot_bisection(rebsim, color_mass=False, color_dens=True, mode='SHOW',
+                   inflate=1.0):
+    N_tot = rebsim.N
+    particle_arr = rebsim.particles
+    xs = np.empty((N_tot))
+    ys = np.empty_like(xs)
+    zs = np.empty_like(xs)
+    rad_arr = np.empty_like(xs)
+    if any([color_mass, color_dens]):
+        mass_arr = np.empty_like(xs)
+    else:
+        pass
+    for i in range(0, N_tot):
+        particle = particle_arr[i]
+        xs[i] = particle.x
+        ys[i] = particle.y
+        zs[i] = particle.z
+        rad_arr[i] = particle.r
+        if any([color_mass, color_dens]):
+            mass_arr[i] = particle.m
+
+    argloc = np.argmax(mass_arr)
+    xs = np.delete(xs, argloc)
+    ys = np.delete(ys, argloc)
+    zs = np.delete(zs, argloc)
+    rad_arr = np.delete(rad_arr, argloc)
+    mass_arr = np.delete(mass_arr, argloc)
+    bisection_mask = np.where(zs < np.median(zs))
+    ys = ys[bisection_mask]
+    zs = zs[bisection_mask]
+    mass_arr = mass_arr[bisection_mask]
+    rad_arr = rad_arr[bisection_mask]
+    xs = xs[bisection_mask]
+    if color_dens:
+        dens_arr = mass_arr/((4.0/3.0)*np.pi*(rad_arr**3.0))
+        mappable = plt.scatter(xs, ys, c=dens_arr, s=inflate*rad_arr)
+    else:
+        mappable = plt.scatter(xs, ys, c=mass_arr, s=inflate*rad_arr)
+    plt.colorbar()
+    if mode == 'SHOW':
+        plt.show()
+    elif mode == 'RETURN':
+        return fig
+    else:
+        savename = mode + '.pdf'
+        plt.savefig(savename)
+    plt.clf()
 
 
 def calc_axis(m_wd, m_body, P, grav):
@@ -83,12 +214,12 @@ def get_rho_core(rho_bulk, fracs=[0.35, 0.65], k_rhos=[1.0, 0.25]):
 
 
 def get_packing(packing_path):
-    np.random.seed(seed)
-    fnames = os.listdir(path)
-    csv_names = [fname if fname.endswith('.csv') for fname in fnames]
-    seed_names = np.array([csv_name if csv_name.startswith('seed')
-                          for csv_name in csv_names])
-    packing = pd.DataFrame(np.random.choice(seed_names))
+    fnames = os.listdir(packing_path)
+    csv_names = [fname for fname in fnames if fname.endswith('.csv')]
+    seed_names = np.array([csv_name for csv_name in csv_names
+                           if csv_name.startswith('seed')])
+    packing_name = packing_path + '/' + np.random.choice(seed_names)
+    packing = pd.read_csv(packing_name)
     return packing
 
 
@@ -97,13 +228,8 @@ def scale_packing(packing, rad_bulk):
     y = packing.y
     z = packing.z
     r = packing.r
-    x_max = np.max(x)
-    y_max = np.max(y)
-    z_max = np.max(z)
-    x_min = np.abs(np.min(x))
-    y_min = np.abs(np.min(y))
-    z_min = np.abs(np.min(z))
-    rad_now = np.median([x_max, x_min, y_max, y_min, z_max, z_min])
+    pos_r = np.sqrt(x**2.0 + y**2.0 + z**2.0)
+    rad_now = np.max(pos_r)
     rad_factor = rad_bulk/rad_now
     packing.x = rad_factor*packing.x
     packing.y = rad_factor*packing.y
@@ -115,7 +241,7 @@ def scale_packing(packing, rad_bulk):
 def get_rad_layers(fracs, rad_bulk):
     rad_high = np.zeros_like(fracs)
     rad_low = np.zeros_like(fracs)
-    rad_high[-1] = rad_high
+    rad_high[-1] = rad_bulk
     for i in range(0, len(fracs) - 1):
         rad_high[i] = ((rad_bulk**3.0)*fracs[i] +
                        (rad_high[i]**3.0))**(1.0/3.0)
@@ -147,27 +273,41 @@ def calc_axis(mass_wd, mass_bulk, P, grav):
 
 def add_scaled_packing(sim, packing, mass_bulk, rho_bulk,
                        fracs=[0.35, 0.65], k_rhos=[1.0, 0.25],
-                       position=(0, 0, 0), velocity=(0, 0, 0)):
+                       position=[0.0, 0.0, 0.0], velocity=[0.0, 0.0, 0.0],
+                       n_frags=0, frag_mass_bounds=[4.35e20, 1.45e20],
+                       frag_rho_bounds=[5.0e3, 2.0e3], body=1):
     rad_bulk = get_rad_bulk(mass_bulk, rho_bulk)
     rad_high, rad_low = get_rad_layers(fracs, rad_bulk)
     x_arr = packing.x
     y_arr = packing.y
     z_arr = packing.z
-    rad_arr = packing.r
+    rad_arr = np.array(packing.r)
+    if n_frags != 0:
+        frag_indices = np.random.choice(len(rad_arr), n_frags)
+        frag_rhos = np.random.uniform(low=frag_rho_bounds[1],
+                                      high=frag_rho_bounds[0],
+                                      size=n_frags)
+        frag_masses = np.random.uniform(low=frag_mass_bounds[1],
+                                        high=frag_mass_bounds[0],
+                                        size=n_frags)
+        frag_rads = get_rad_bulk(mass_bulk=frag_masses, rho_bulk=frag_rhos)
     pos_r = np.sqrt(x_arr**2.0 + y_arr**2.0 + z_arr**2.0)
-    pos_x = x_arr + origin[0]
-    pos_y = y_arr + origin[1]
-    pos_z = z_arr + origin[2]
+    pos_x = np.array(x_arr) + position[0]
+    pos_y = np.array(y_arr) + position[1]
+    pos_z = np.array(z_arr) + position[2]
     vel_x = np.zeros_like(x_arr) + velocity[0]
     vel_y = np.zeros_like(y_arr) + velocity[1]
     vel_z = np.zeros_like(z_arr) + velocity[2]
     rho_core = get_rho_core(rho_bulk, fracs=fracs, k_rhos=k_rhos)
+    m_tot = 0.0
+    count = 0
     for i in range(0, len(fracs)):
         r_low = rad_low[i]
         r_high = rad_high[i]
-        rho_layer = k_rho[i]*rho_core
+        rho_layer = k_rhos[i]*rho_core
         mass_layer = rho_layer*((4.0*np.pi)/(3.0))*(np.median(rad_arr)**3.0)
-        layer_mask = np.where((r_low < pos_r) & (pos_r < r_high))
+        mass_layer = mass_layer/0.0052325
+        layer_mask = np.where((r_low <= pos_r) & (pos_r <= r_high))[0]
         layer_x = pos_x[layer_mask]
         layer_y = pos_y[layer_mask]
         layer_z = pos_z[layer_mask]
@@ -175,36 +315,187 @@ def add_scaled_packing(sim, packing, mass_bulk, rho_bulk,
         layer_vx = vel_x[layer_mask]
         layer_vy = vel_y[layer_mask]
         layer_vz = vel_z[layer_mask]
-        hash_names = ['l_%i_%i' % (i, j) for j in range(0, len(layer_x))]
+        hash_names = ['%i_l_%i_%i' % (body, i, j) for j in range(0,
+                                                                 len(layer_x))]
         for q in range(0, len(layer_x)):
-            sim.add(m=mass_layer[q], r=layer_r[q],
-                    x=layer_x[q], y=layer_y[q], z=layer_z[q],
-                    vx=layer_vx[q], vy=layer_vy[q], vz=layer_vz[q],
-                    hash=hash_names[q])
+            count = count + 1
+            if n_frags != 0:
+                if (count-1) in frag_indices:
+                    loc = np.where(frag_indices == (count - 1))
+                    sim.add(m=frag_masses[loc], r=frag_rads[loc],
+                            x=layer_x[q], y=layer_y[q], z=layer_z[q],
+                            vx=layer_vx[q], vy=layer_vy[q], vz=layer_vz[q],
+                            hash=hash_names[q])
+                    m_tot += frag_masses[loc]
+                else:
+                    sim.add(m=mass_layer, r=layer_r[q],
+                            x=layer_x[q], y=layer_y[q], z=layer_z[q],
+                            vx=layer_vx[q], vy=layer_vy[q], vz=layer_vz[q],
+                            hash=hash_names[q])
+                    m_tot += mass_layer
+            else:
+                sim.add(m=mass_layer, r=layer_r[q],
+                        x=layer_x[q], y=layer_y[q], z=layer_z[q],
+                        vx=layer_vx[q], vy=layer_vy[q], vz=layer_vz[q],
+                        hash=hash_names[q])
+                m_tot += mass_layer
+
+    print 'Ratio is:', m_tot/(rho_bulk*(4.0*np.pi/3.0)*(rad_bulk**3.0))
     return sim
 
 
 def add_pile_orbit(sim, mass_bulk, rho_bulk,
                    P=4.495, e=0.0, inc=0.0,
                    Omega=0.0, omega=0.0, f=0.0,
-                   center_hash='wd',
-                   fracs=[0.35, 0.65], k_rhos=[1.0, 0.25]):
-    center_particle = sim.particles[center_hash]
+                   fracs=[0.35, 0.65], k_rhos=[1.0, 0.25],
+                   n_frags=0, frag_mass_bounds=[4.35e20, 1.45e20],
+                   frag_rho_bounds=[5.0e3, 2.0e3], body=1):
+    center_particle = sim.particles['wd']
     mass_center = center_particle.m
     mass_body = mass_bulk
-    axis = calc_axis(mass_center, mass_body, sim.G)
+    axis = calc_axis(mass_center, mass_body, P*3600.0, sim.G)
     sim.add(a=axis, e=e, inc=inc, Omega=Omega, omega=omega, f=f, hash='test')
-    position = (0.0, 0.0, 0.0)
-    velocity = (0.0, 0.0, 0.0)
+    position = [0.0, 0.0, 0.0]
+    velocity = [0.0, 0.0, 0.0]
     position[0] = sim.particles['test'].x
     position[1] = sim.particles['test'].y
     position[2] = sim.particles['test'].z
     velocity[0] = sim.particles['test'].vx
     velocity[1] = sim.particles['test'].vy
     velocity[2] = sim.particles['test'].vz
-    sim.remove(hash='test')
     packing = get_packing(packing_path)
     rad_bulk = get_rad_bulk(mass_bulk, rho_bulk)
     packing = scale_packing(packing, rad_bulk)
     return add_scaled_packing(sim, packing, mass_bulk, rho_bulk,
-                              fracs, k_rhos, position, velocity)
+                              fracs, k_rhos, position, velocity,
+                              n_frags=n_frags,
+                              frag_mass_bounds=frag_mass_bounds,
+                              frag_rho_bounds=frag_rho_bounds,
+                              body=body)
+
+
+def setup_simulation(dt=10.0, integrator='WHFAST', collision='direct',
+                     collision_resolve='hardsphere',
+                     archive_name='archive.bin', interval=2.7e6,
+                     mass_wd=0.6, N_piles=1, pile_mass_bulks=[2.9e22],
+                     pile_rho_bulks=[3.8e3],
+                     pile_orbits=[[4.495, 0.0, 0.0, 0.0, 0.0, 0.0]],
+                     pile_fracs=[[0.35, 0.65]],
+                     pile_k_rhos=[[1.0, 0.25]],
+                     n_frags=0,
+                     frag_mass_bounds=[4.35e20, 1.45e20],
+                     frag_rho_bounds=[5.0e3, 2.0e3],
+                     save_loc=save_path,
+                     seed=0.0):
+
+    np.random.seed(seed)
+    sim = rebound.Simulation()
+    sim = add_wd(sim, mass_wd)
+    for i in range(0, N_piles):
+        sim = add_pile_orbit(sim, pile_mass_bulks[i], pile_rho_bulks[i],
+                             P=pile_orbits[i][0], e=pile_orbits[i][1],
+                             inc=pile_orbits[i][2], Omega=pile_orbits[i][3],
+                             omega=pile_orbits[i][4], f=pile_orbits[i][5],
+                             fracs=pile_fracs[i], k_rhos=pile_k_rhos[i],
+                             n_frags=n_frags,
+                             frag_mass_bounds=frag_mass_bounds,
+                             frag_rho_bounds=frag_rho_bounds,
+                             body=i)
+
+    save_name = save_loc + '/' + archive_name
+    sim.dt = dt
+    sim.integrator = integrator
+    sim.collision = collision
+    sim.collision_resolve = collision_resolve
+    sim.initSimulationArchive(archive_name, interval=interval)
+    # sim.ri_whfast.corrector = 11
+    sim.save(archive_name)
+    return sim
+
+
+def integrate_csv(sim, t_integrate, P_output=2.628e6, P_light=2.16e4):
+    dt = sim.dt
+    times = np.arange(sim.t, t_integrate, dt)
+    for time in times:
+        sim.integrate(time, exact_finish_time=0)
+        P_output = 2.628e6
+        P_light = 2.16e4
+        test = sim.t/P_output
+        floor_test = np.floor(test)
+        temp_test = test - floor_test
+        ratio = P_light/P_output
+        print "Time is: %.6f days\n" % (sim.t/86400.0)
+        if temp_test < ratio:
+            temp_name = int(floor_test)
+            save_name = (sim.t - floor_test*P_output)/dt
+            f_name = "%i_%g.csv" % (temp_name, save_name)
+            fp = open(f_name, "w+")
+            fp.write("Hash, x, y, z\n")
+            for i in range(0, sim.N):
+                fp.write("%s, %.16f, %.16f, %.16f\n" %
+                         (sim.particles[i].hash, sim.particles[i].x,
+                          sim.particles[i].y,
+                          sim.particles[i].z))
+            fp.close()
+
+
+def parse_params(param_file):
+    f = open(param_file)
+    archive_name = f.readline()[15:-1] + '.bin'
+    mass_wd = float(f.readline()[10:-1])
+    n_piles = int(f.readline()[10:-1])
+    seed = int(float(f.readline()[7:-1]))
+    pile_masses = np.empty((n_piles))
+    pile_rho_bulks = np.empty_like(pile_masses)
+    pile_orbits = np.empty((n_piles, 6))
+    pile_layer_fracs = np.empty((pile_masses), dtype=list)
+    pile_layer_k_rhos = np.empty_like(pile_layer_fracs)
+    for i in range(0, n_piles):
+        pile_masses[i] = float(f.readline()[14:-1])
+        pile_rho_bulks[i] = float(f.readline()[18:-1])
+        for j in range(0, 6):
+            pile_orbits[i, j] = float(f.readline()[17:-1])
+        pile_layer_num = int(f.readline()[16:-1])
+        pile_layer_fracs[i] = [float(f.readline()[22:-1])
+                               for k in range(0, pile_layer_num)]
+        pile_layer_k_rhos[i] = [float(f.readline()[23:-1])
+                                for k in range(0, pile_layer_num)]
+    pile_layer_fracs = pile_layer_fracs[0:n_piles]
+    pile_layer_k_rhos = pile_layer_k_rhos[0:n_piles]
+    n_frags = int(f.readline()[10:-1])
+    frag_mass_high = float(f.readline()[16:-1])
+    frag_mass_low = float(f.readline()[15:-1])
+    frag_rho_high = float(f.readline()[15:-1])
+    frag_rho_low = float(f.readline()[14:-1])
+    return [archive_name, mass_wd,
+            seed, n_piles,
+            pile_masses, pile_rho_bulks,
+            pile_orbits, pile_layer_fracs,
+            pile_layer_k_rhos, n_frags,
+            [frag_mass_high, frag_mass_low],
+            [frag_rho_high, frag_rho_low]]
+
+
+def run_params(params):
+    sim = setup_simulation(archive_name=params[0], mass_wd=params[1],
+                           seed=params[2], N_piles=params[3],
+                           pile_mass_bulks=params[4], pile_rho_bulks=params[5],
+                           pile_orbits=params[6], pile_fracs=params[7],
+                           pile_k_rhos=params[8], n_frags=params[9],
+                           frag_mass_bounds=params[10],
+                           frag_rho_bounds=params[11])
+    return sim
+
+
+if __name__ == '__main__':
+    # sim = setup_simulation(pile_fracs=[[0.35, 0.65]],
+    #                       pile_k_rhos=[[1.0, 0.25]])
+    # plt.set_cmap('Set1')
+    # plot_2D_simulation(sim, inflate=0.0025, mode='SHOW', wd_status='HIDE')
+    params = parse_params('/Volumes/westep/girish/WesThesis2016/'
+                          + 'simulation_nbody/cluster/param_files/'
+                          + 'veras_test.txt')
+    for i in range(0, len(params)):
+        print params[i]
+    sim = run_params(params)
+    # plot_2D_simulation(sim, inflate=0.0025, mode='SHOW', wd_status='HIDE')
