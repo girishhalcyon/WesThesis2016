@@ -1,0 +1,192 @@
+#!/bin/bash -x
+#rm -f veras_test.stdout veras_test.stderr
+# work dir and cwd
+export MYSANSCRATCH=/localscratch5tb/$LSB_JOBID
+cd $MYSANSCRATCH
+
+# at job finish, all content in /sanscratch/JOBPID
+# will be copied to /sanscratch/checkpoints/JOBPID
+# content older than 3 months will be removed
+
+# SCHEDULER set queue in next TWO lines
+queue=mw256fd
+#BSUB -q mw256fd
+#BSUB -n 20
+#BSUB -J veras_test
+#BSUB -o veras_test.stdout
+#BSUB -e veras_test.stderr
+#BSUB -N
+# next required for mpirun checkpoint to work
+# restarts must use same QUEUE
+#BSUB -R "span[hosts=1]"
+
+# CHECK POINT TIME INTERVAL: 10m (debug) 6h 12h 18h 1d
+cpti=1d
+
+# COPY APPLICATION TO WORK DIR $MYSANSCRATCH (cwd)
+# always stage the application (and data if needed)
+# if mpirun save_exec="n" (default)
+save_exec="n"
+pre_cmd=" scp -r
+$HOME/code/rebound/ ."
+pre_cmd_cd=" cd $MYSANSCRATCH/rebound/examples/test_veras/"
+pre_cmd_make_clean=" make clean"
+pre_cmd_make=" make"
+pre_cmd_ls=" ls"
+cmd_rebound=" ./rebound"
+cmd_lightcurve=" python lightcurve.py"
+post_cmd=" scp $MYSANSCRATCH/rebound/examples/test_veras/* $HOME/code/rebound/examples/test_veras/"
+
+
+# IF START OF JOB, UNCOMMENT
+# its either start or restart block
+mode=start
+cmd="./run_commands.sh"
+
+
+# IF RESTART OF JOB, UNCOMMENT, MUST BE RUN ON SAME QUEUE
+# you must have pwd.JOBPID and chk.JOBPID in $orgjobpid/
+#mode=restart
+#orgjobpid=699645
+
+# user environment
+export PYTHONHOME=/share/apps/CENTOS6/blcr_soft/python/2.7.10
+export PYTHONPATH=/home/apps/CENTOS6/blcr_soft/python/2.7.10/lib/python2.7/site-packages
+export PATH=$PYTHONHOME/bin:$PATH
+which python
+
+
+############### NOTHING TO EDIT BELOW THIS LINE ##################
+
+
+
+# checkpoints
+checkpoints=/sanscratch/checkpoints
+
+# kernel modules
+mods=`/sbin/lsmod | grep ^blcr | wc -l`
+if [ $mods -ne 2 ]; then
+	echo "Error: BLCR modules not loaded on `hostname`"
+	kill $$
+fi
+
+# blcr setup
+restore_options=""
+#restore_options="--no-restore-pid --no-restore-pgid --no-restore-sid"
+if [ $save_exec == "n" ]; then
+	#save_options="--save-private --save-shared"
+	save_options="--save-none"
+else
+	save_options="--save-all"
+fi
+
+# environment
+export PATH=/share/apps/CENTOS6/openmpi/1.6.5.cr/bin:$PATH
+export LD_LIBRARY_PATH=/share/apps/CENTOS6/openmpi/1.6.5.cr/lib:$LD_LIBRARY_PATH
+
+export PATH=/share/apps/blcr/0.8.5/${queue}/bin:$PATH
+export LD_LIBRARY_PATH=/share/apps/blcr/0.8.5/${queue}/lib:$LD_LIBRARY_PATH
+
+which mpirun cr_mpirun ompi-checkpoint ompi-restart cr_checkpoint cr_restart
+
+# setup checkpoints dir
+if [ ! -d $checkpoints/$LSB_JOBID ]; then
+	mkdir -p $checkpoints/$LSB_JOBID
+else
+	echo "Error: $checkpoints/$LSB_JOBID already exists, exciting"
+	kill $$
+fi
+
+# save process id and path and start application
+if [ "$mode" == "start" ];  then
+	# hostfile
+	echo "${LSB_HOSTS}" > $HOME/.lsbatch/hostfile.tmp.$LSB_JOBID
+	tr '\/ ' '\r\n' < $HOME/.lsbatch/hostfile.tmp.$LSB_JOBID > $HOME/.lsbatch/hostfile.$LSB_JOBID
+	c=`wc -l $HOME/.lsbatch/hostfile.$LSB_JOBID | awk '{print $1}'`
+	for i in `seq 1 $c`; do echo '127.0.0.1' >> $HOME/.lsbatch/localhost.$LSB_JOBID; done
+	$pre_cmd
+	$pre_cmd_cd
+	$pre_cmd_make_clean
+	$pre_cmd_make
+	$pre_cmd_ls
+	$cmd_rebound
+	# why
+	#rm -f /tmp/tmp??????
+	pid=$!
+	pwd > $checkpoints/$LSB_JOBID/pwd.$pid
+	orgjobpid=0
+
+# otherwise restart the job
+elif [ "$mode" == "restart" ]; then
+	orgpid=`ls $checkpoints/$orgjobpid/pwd.* | awk -F\. '{print $2}'`
+	orgpwd=`cat $checkpoints/$orgjobpid/pwd.$orgpid`
+        if [ "X$orgpwd" == "X" ]; then
+                echo "Error: orgpwd problem, check error log"
+                exit
+        fi
+	# cleanup old if present
+	rm -rf /sanscratch/$orgjobpid /localscratch/$orgjobpid
+	rm -f $HOME/.lsbatch/*.$orgjobpid
+	# why
+	#rm -f /tmp/tmp??????
+	# stage old
+	scp $checkpoints/$orgjobpid/*.$orgjobpid.err $checkpoints/$orgjobpid/*.$orgjobpid.out $HOME/.lsbatch/
+	scp -r $checkpoints/$orgjobpid/* $MYSANSCRATCH
+	ln -s $MYSANSCRATCH /sanscratch/$orgjobpid
+	scp $checkpoints/$orgjobpid/hostfile.$orgjobpid $HOME/.lsbatch/
+	scp -r $checkpoints/$orgjobpid/$orgjobpid/* /localscratch/$LSB_JOBID
+	# why
+	#scp $checkpoints/$orgjobpid/$orgjobpid/tmp?????? /tmp/
+	ln -s /localscratch/$LSB_JOBID /localscratch/$orgjobpid
+	c=`wc -l $HOME/.lsbatch/hostfile.$orgjobpid | awk '{print $1}'`
+	for i in `seq 1 $c`; do echo '127.0.0.1' >> $HOME/.lsbatch/localhost.$orgjobpid; done
+	cr_restart --kmsg-warning $restore_options --relocate $orgpwd=$MYSANSCRATCH --cont \
+	$MYSANSCRATCH/chk.$orgpid 2>>$checkpoints/$LSB_JOBID/cr_restart.err &
+        pid=$!
+	started=`ps -u $USER | awk '{print $1}' | grep $pid | wc -l`
+	if [ $started -ne 1 ]; then
+		echo "Error: cr_restart failed, check error log"
+		kill $$
+	fi
+	pwd > $checkpoints/$LSB_JOBID/pwd.$pid
+
+# obviously
+else
+	echo "Error: startup mode not defined correctly"
+	kill $$
+fi
+
+# if $cmd disappears during $pcit, terminate wrapper
+export POST_CMD="$post_cmd"
+blcr_watcher $pid $$ $LSB_JOBID $orgjobpid &
+bw_pid=$!
+
+# always run this block
+while [ true ]; do
+	# checkpoint time interval
+        sleep $cpti
+	# finished?
+        no_pid=`ps -u $USER | grep $pid | awk '{print $1}'`
+        if [ "${no_pid}x" == 'x' ]; then
+                # save output
+                scp -rp $MYSANSCRATCH/* $checkpoints/$LSB_JOBID/
+                $POST_CMD
+		kill $bw_pid
+		rm -f $HOME/.lsbatch/*${orgjobpid}*
+		exit
+	fi
+        # checkpoint file outside of sanscratch
+	scp -r $MYSANSCRATCH/* $checkpoints/$LSB_JOBID/
+	scp -r /localscratch/$LSB_JOBID $checkpoints/$LSB_JOBID/
+	chmod u+w $checkpoints/$LSB_JOBID/chk.* /sanscratch/$LSB_JOBID/chk.*
+	# why
+	#scp /tmp/tmp?????? $checkpoints/$LSB_JOBID/$LSB_JOBID/
+	cr_checkpoint -v --tree --cont $save_options --clobber -f $checkpoints/$LSB_JOBID/chk.$pid $pid \
+	2>>$checkpoints/$LSB_JOBID/cr_checkpoint.err
+	scp $HOME/.lsbatch/*.$LSB_JOBID.err $HOME/.lsbatch/*.$LSB_JOBID.out $checkpoints/$LSB_JOBID/
+	scp $HOME/.lsbatch/hostfile.$LSB_JOBID $checkpoints/$LSB_JOBID/
+	scp -r /localscratch/$LSB_JOBID $checkpoints/$LSB_JOBID/
+	# why
+	#scp /tmp/tmp?????? $checkpoints/$LSB_JOBID/$LSB_JOBID/
+	date >> $checkpoints/$LSB_JOBID/cr_checkpoint.err
+done
